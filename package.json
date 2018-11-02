@@ -1,0 +1,32 @@
+{
+  "name": "fri-onj-assignment1",
+  "author": "Tilen Tomakić",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "@types/cheerio": "^0.22.9",
+    "@types/fs-extra": "^5.0.4",
+    "@types/lodash": "^4.14.117",
+    "@types/natural": "^0.2.33",
+    "@types/request": "^2.48.0",
+    "@types/request-promise-native": "^1.0.15",
+    "cheerio": "^1.0.0-rc.2",
+    "compromise": "^11.12.2",
+    "crawler": "^1.2.0",
+    "fs-extra": "^7.0.0",
+    "jquery": "^3.3.1",
+    "jsdom": "^13.0.0",
+    "lda": "^0.2.0",
+    "lodash": "^4.17.11",
+    "natural": "^0.6.2",
+    "node-wikipedia": "^0.0.2",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.5",
+    "sanitize-filename": "^1.6.1",
+    "sanitize-html": "^1.19.1",
+    "striptags": "^3.1.1",
+    "unfluff": "^3.2.0",
+    "wikijs": "^4.8.1",
+    "wordnet-db": "^3.1.11"
+  }
+}
