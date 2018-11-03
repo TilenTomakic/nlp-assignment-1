@@ -31,16 +31,17 @@ export interface UnfluffInterface {
 
 
 export interface PageInterface {
-    title: string;
     item: ItemInterface
     fromCategory: string
+    title: string;
     description: string;
     features: { tag: string, text: string }[];
     categories: { tag: string, text: string }[];
+    tags: string[];
     comments: string[];
     reviews?: string[];
-    tags: string[];
-    skip?: boolean
+    skip?: boolean;
+    skipReason?: string;
     file: string
     altToHtml: string
     altToPrewHtml?: string

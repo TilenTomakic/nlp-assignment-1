@@ -1,9 +1,10 @@
-import {step1} from "./step1";
-import {step2} from "./step2";
-import {step3} from "./step3";
-import {step4} from "./step4";
-import {stepX} from "./stepX";
-import {step50} from "./step50";
+import {step1}    from "./step1";
+import {step2}    from "./step2";
+import {step3}    from "./step3";
+import {step4}    from "./step4";
+import {stepX}    from "./stepX";
+import {step50}   from "./step50";
+import { step51 } from "./step51";
 
 const steps = [
     // GET TEXT
@@ -13,10 +14,11 @@ const steps = [
     step4,
 
     // PROCESS TEXT
-    //step50,
+    step50,
+    step51,
 
     // SHOW RESULTS
-    //stepX,
+    stepX,
 ];
 
 async function run(skipTo: any) {
@@ -29,7 +31,7 @@ async function run(skipTo: any) {
     }
 }
 
-run(step1).then(() => {
+run(step51).then(() => {
     console.log('Finished');
     process.exit(0);
 }).catch(e => {

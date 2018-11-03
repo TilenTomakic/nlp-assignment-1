@@ -1,11 +1,11 @@
-import * as rp from 'request-promise-native';
-import * as cheerio from 'cheerio';
-import * as fs from 'fs-extra';
-import {chunk} from 'lodash';
-import {ItemInterface, IndexPageInterface} from "./step1";
-import * as Crawler from "crawler";
-import {PageInterface} from "./step2";
-import * as unfluff from 'unfluff';
+import * as rp                               from 'request-promise-native';
+import * as cheerio                          from 'cheerio';
+import * as fs                               from 'fs-extra';
+import { chunk }                             from 'lodash';
+import { ItemInterface, IndexPageInterface } from "./step1";
+import * as Crawler                          from "crawler";
+import { PageInterface }                     from "./step2";
+import * as unfluff                          from 'unfluff';
 
 const version = 3;
 
@@ -13,9 +13,17 @@ const crawler = new Crawler({
     maxConnections: 10,
     // rotateUA: true,
     // userAgent: [],
-    callback: function (error, res, done) {
+    callback      : function (error, res, done) {
         if (error) {
-            console.error(error);
+            const page      = res.options.params.page;
+            page.skip       = true;
+            page.skipReason = error.message;
+            fs.writeJson(page.file, page).then(() => {
+                done();
+            }).catch((e) => {
+                console.error(e, res.options.params);
+                done();
+            });
         } else {
             processData(res, res.$, res.options.params)
                 .then(() => done())
@@ -27,10 +35,10 @@ const crawler = new Crawler({
     }
 });
 
-async function processData(res, $: CheerioStatic, {page}: { page: PageInterface }) {
+async function processData(res, $: CheerioStatic, { page }: { page: PageInterface }) {
     process.stdout.write(", " + page.item.id + `(${ page.officalUrl })`);
-    page.officalHtml = res.body;
-    page.officalPage = unfluff(res.body, 'en');
+    page.officalHtml  = res.body;
+    page.officalPage  = unfluff(res.body, 'en');
     page.versionStep3 = version;
     await fs.writeJson(page.file, page);
 }

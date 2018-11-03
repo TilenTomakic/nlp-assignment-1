@@ -1,92 +1,63 @@
-import * as fs from 'fs-extra';
-import {PageInterface} from "./step2";
-import * as natural from 'natural';
-import * as lda from 'lda';
-const compromise = require('compromise');
+import * as fs           from 'fs-extra';
+import { PageInterface } from "./step2";
 
-const tokenizer = new natural.WordTokenizer();
-(natural.PorterStemmer as any).attach();
-
-export interface NlpPageInterface extends PageInterface {
-    combinedDescription: string;
-    nlpTokens: string[];
-    nlpStemTokens: string[];
+export interface PackedPageInterface {
+    id: string;
+    url: string;
+    title: string;
+    description: string;
+    tags: string[];
+    documents: DocumentInterface[];
 }
 
-const normalizeOptions =  {
-    // remove hyphens, newlines, and force one space between words
-    whitespace: true,
-    // keep only first-word, and 'entity' titlecasing
-    case: true,
-    // turn 'seven' to '7'
-    numbers: true,
-    // remove commas, semicolons - but keep sentence-ending punctuation
-    punctuation: true,
-    // visually romanize/anglicize 'Björk' into 'Bjork'.
-    unicode: true,
-    // turn "isn't" to "is not"
-    contractions: true,
-    //remove periods from acronyms, like 'F.B.I.'
-    acronyms:true,
+export interface DocumentInterface {
+    source: 'wiki' | 'official' | 'review' | 'comment';
+    text: string;
+}
 
-    // --- A2
+export interface DataInterface {
+    items: PackedPageInterface[]
+}
 
-    //remove words inside brackets (like these)
-    parentheses: true,
-    // turn "Google's tax return" to "Google tax return"
-    possessives: true,
-    // turn "batmobiles" into "batmobile"
-    plurals: true,
-    // turn all verbs into Infinitive form - "I walked" → "I walk"
-    verbs: true,
-    //turn 'Vice Admiral John Smith' to 'John Smith'
-    honorifics: true,
-};
-
-// .sentences().data()
-async function processPage(page: NlpPageInterface) {
-    const cmpDescription    = compromise(page.description || page.item.description || '');
-    const cmpOfficial       = compromise(page.officalPage.text || '');
-    const cmpWiki           = compromise( page.wiki.content || '');
-
-    const description =   cmpDescription                  .normalize(normalizeOptions).out('text');
-    const official =      cmpOfficial                 .normalize(normalizeOptions).out('text');
-    const wiki =          cmpWiki                 .normalize(normalizeOptions).out('text');
-
-
-    const abc = cmpDescription.sentences().data().map(x => x.normal);
-
-    const combined = `${description }\n${ official }\n${ wiki }`;
-    page.combinedDescription = `${description }\n${ official }\n${ wiki }`;
-
-    const distanceToOffical = natural.LevenshteinDistance(page.item.description, page.officalPage.text, {search: true});
-    const distanceToWiki = natural.LevenshteinDistance(page.item.description,  page.wiki.content, {search: true});
-
-    page.nlpTokens = tokenizer.tokenize(page.combinedDescription);
-    page.nlpStemTokens = (page.combinedDescription as any).tokenizeAndStem();
+async function processPage(rawPage: PageInterface) {
+    const page: PackedPageInterface = {
+        id         : rawPage.item.id,
+        url        : rawPage.item.url,
+        title      : rawPage.title,
+        description: rawPage.description || rawPage.item.description || '',
+        tags       : [
+            ...rawPage.tags,
+            ...rawPage.categories.map(x => x.text),
+            ...rawPage.features.map(x => x.text),
+        ].map(x => x.toLowerCase()),
+        documents  : [
+            ...(rawPage.wiki.content || '')
+                .split(/=== .+ ===/)
+                .map(text => ({ source: 'wiki' as 'wiki', text })),
+            ...(rawPage.reviews || [])
+                .map(text => ({ source: 'review' as 'review', text })),
+            ...(rawPage.comments || [])
+                .map(text => ({ source: 'comment' as 'comment', text })),
+            ...(rawPage.officalPage.text || '')
+                .split('\n')
+                .map(text => ({ source: 'official' as 'official', text })),
+        ].filter(x => !!x)
+    };
+    return page;
 }
 
 export async function step50() {
-    return;
-    const pages = fs.readdirSync('./data/pages');
-
-    const classifier = new natural.BayesClassifier();
-
+    const pages               = fs.readdirSync('./data/pages');
+    const data: DataInterface = {
+        items: []
+    };
     for (const pageName of pages) {
-        const page: NlpPageInterface = await fs.readJson(`./data/pages/${ pageName }`);
+        const page: PageInterface = await fs.readJson(`./data/pages/${ pageName }`);
         if (page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text) {
             continue;
         }
         process.stdout.write(", " + page.item.id);
-        await processPage(page);
-
-        // classifier.addDocument(page.combinedDescription, page.item.title);
-        // await fs.writeJson(page.file, page);
+        data.items.push(await processPage(page));
     }
-
-    // classifier.train();
-    // console.log(classifier.classify('blog'));
-    // console.log(classifier.classify('website'));
-
-    process.exit(0);
+    await fs.writeJson('./data/data.json', data);
 }
