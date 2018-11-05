@@ -11,6 +11,7 @@ export interface PackedPageInterface {
 }
 
 export interface DocumentInterface {
+    measure?: number;
     source: 'wiki' | 'official' | 'review' | 'comment';
     text: string;
 }
@@ -32,7 +33,8 @@ async function processPage(rawPage: PageInterface) {
         ].map(x => x.toLowerCase()),
         documents  : [
             ...(rawPage.wiki.content || '')
-                .split(/=== .+ ===/)
+                .split(/={2,3} .+ ={2,3}/)
+                .map(x => x.split('\n').join(' '))
                 .map(text => ({ source: 'wiki' as 'wiki', text })),
             ...(rawPage.reviews || [])
                 .map(text => ({ source: 'review' as 'review', text })),
@@ -41,7 +43,7 @@ async function processPage(rawPage: PageInterface) {
             ...(rawPage.officalPage.text || '')
                 .split('\n')
                 .map(text => ({ source: 'official' as 'official', text })),
-        ].filter(x => !!x)
+        ].filter(x => !!x.text)
     };
     return page;
 }
@@ -49,15 +51,9 @@ async function processPage(rawPage: PageInterface) {
 export async function step50() {
     const pages               = fs.readdirSync('./data/pages');
     const data: DataInterface = {
-        items: []
+        items: await Promise.all((await Promise.all(pages.map(pageName => fs.readJson(`./data/pages/${ pageName }`))))
+            .filter(page => !(page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text))
+            .map(page => processPage(page)))
     };
-    for (const pageName of pages) {
-        const page: PageInterface = await fs.readJson(`./data/pages/${ pageName }`);
-        if (page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text) {
-            continue;
-        }
-        process.stdout.write(", " + page.item.id);
-        data.items.push(await processPage(page));
-    }
     await fs.writeJson('./data/data.json', data);
 }

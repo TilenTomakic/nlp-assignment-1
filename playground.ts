@@ -18,3 +18,11 @@ wikipedia.page.data("Gitlab", { content: true }, function(response) {
     console.log()
     // structured information on the page for Clifford Brown (wikilinks, references, categories, etc.)
 });
+
+interface KlassBase<T> {
+    new (hour: number, minute: number): T;
+}
+
+class Klass implements KlassBase<Klass> {
+    constructor(h: number, m: number) { }
+}
