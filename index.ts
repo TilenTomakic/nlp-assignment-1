@@ -19,7 +19,8 @@ const steps = [
     // PROCESS TEXT
     step50,
     step51,
-    // step52,
+    step52,
+    //step53,
 
     // SHOW RESULTS
     // step100,
@@ -37,7 +38,7 @@ async function run(skipTo: any) {
     }
 }
 
-run(step102).then(() => {
+run(step50).then(() => {
     console.log('Finished');
     process.exit(0);
 }).catch(e => {
