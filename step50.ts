@@ -1,24 +1,59 @@
 import * as fs           from 'fs-extra';
 import { PageInterface } from "./step2";
+const compromise = require('compromise');
 
 export interface PackedPageInterface {
     id: string;
     url: string;
     title: string;
     description: string;
+    descriptionTokenizedAndSteamed?: string;
     tags: string[];
     documents: DocumentInterface[];
 }
 
 export interface DocumentInterface {
+    rejected?: string;
     measure?: number;
     source: 'wiki' | 'official' | 'review' | 'comment';
     text: string;
+    textNorm?: string;
+    tokens?: string[];
 }
 
 export interface DataInterface {
     items: PackedPageInterface[]
 }
+
+const normalizeOptions = {
+    // remove hyphens, newlines, and force one space between words
+    whitespace  : true,
+    // keep only first-word, and 'entity' titlecasing
+    case        : true,
+    // turn 'seven' to '7'
+    numbers     : true,
+    // remove commas, semicolons - but keep sentence-ending punctuation
+    punctuation : true,
+    // visually romanize/anglicize 'Björk' into 'Bjork'.
+    unicode     : true,
+    // turn "isn't" to "is not"
+    contractions: true,
+    //remove periods from acronyms, like 'F.B.I.'
+    acronyms    : true,
+
+    // --- A2
+
+    //remove words inside brackets (like these)
+    parentheses: true,
+    // turn "Google's tax return" to "Google tax return"
+    possessives: true,
+    // turn "batmobiles" into "batmobile"
+    plurals    : true,
+    // turn all verbs into Infinitive form - "I walked" → "I walk"
+    verbs      : true,
+    //turn 'Vice Admiral John Smith' to 'John Smith'
+    honorifics : true,
+};
 
 async function processPage(rawPage: PageInterface) {
     const page: PackedPageInterface = {
@@ -43,7 +78,10 @@ async function processPage(rawPage: PageInterface) {
             ...(rawPage.officalPage.text || '')
                 .split('\n')
                 .map(text => ({ source: 'official' as 'official', text })),
-        ].filter(x => !!x.text)
+        ]
+            .map(x => ({ ...x, text: (x.text || '').trim() }))
+            .map(x => ({ ...x, textNorm: compromise(x.text).normalize(normalizeOptions).out('text') }))
+            .filter(x => x.textNorm.length > 3)
     };
     return page;
 }

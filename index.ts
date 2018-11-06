@@ -7,6 +7,7 @@ import {step50}   from "./step50";
 import { step51 } from "./step51";
 import {step101} from "./step101";
 import {step52} from "./step52";
+import {step102} from "./step102";
 
 const steps = [
     // GET TEXT
@@ -21,8 +22,9 @@ const steps = [
     // step52,
 
     // SHOW RESULTS
-    step100,
+    // step100,
     step101,
+    step102
 ];
 
 async function run(skipTo: any) {
@@ -35,7 +37,7 @@ async function run(skipTo: any) {
     }
 }
 
-run(step50).then(() => {
+run(step102).then(() => {
     console.log('Finished');
     process.exit(0);
 }).catch(e => {
