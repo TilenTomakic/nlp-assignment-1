@@ -10,10 +10,11 @@ export interface PackedPageInterface {
     title: string;
     description: string;
     descriptionNorm?: string;
-    descriptionTokens?: string;
+    descriptionTokens?: string[];
     tags: string[];
     alternatives: string[];
     documents: DocumentInterface[];
+    sentences: DocumentInterface[];
 }
 
 export interface DocumentInterface {
@@ -23,6 +24,7 @@ export interface DocumentInterface {
     text: string;
     textNorm?: string;
     tokens?: string[];
+    compromiseInstance?: any;
 }
 
 export interface DataInterface {
@@ -30,7 +32,7 @@ export interface DataInterface {
     testItems: PackedPageInterface[];
 }
 
-const normalizeOptions = {
+export const normalizeOptions = {
     // remove hyphens, newlines, and force one space between words
     whitespace: true,
     // keep only first-word, and 'entity' titlecasing
@@ -62,6 +64,7 @@ const normalizeOptions = {
 
 async function processPage(rawPage: PageInterface) {
     const page: PackedPageInterface = {
+        sentences: [],
         id: rawPage.item.id,
         url: rawPage.item.url,
         title: rawPage.title,
@@ -73,7 +76,7 @@ async function processPage(rawPage: PageInterface) {
             ...rawPage.features.map(x => x.text),
         ].map(x => x.toLowerCase()),
         documents: [
-            ...(rawPage.wiki.content || '')
+            ...(rawPage.wiki && rawPage.wiki.content || '')
                 .split(/={2,3} .+ ={2,3}/)
                 .map(x => x.split('\n').join(' '))
                 .map(text => ({source: 'wiki' as 'wiki', text})),
@@ -81,15 +84,31 @@ async function processPage(rawPage: PageInterface) {
                 .map(text => ({source: 'review' as 'review', text})),
             ...(rawPage.comments || [])
                 .map(text => ({source: 'comment' as 'comment', text})),
-            ...(rawPage.officalPage.text || '')
+            ...(rawPage.officalPage && rawPage.officalPage.text || '')
                 .split('\n')
                 .map(text => ({source: 'official' as 'official', text})),
         ]
             .map(x => ({...x, text: (x.text || '').trim()}))
-            .map(x => ({...x, textNorm: compromise(x.text).normalize(normalizeOptions).out('text')}))
+            .map(x => {
+                const compromiseInstance = compromise(x.text).normalize(normalizeOptions);
+                return {...x, compromiseInstance, textNorm: compromiseInstance.out('text')};
+            })
             .filter(x => x.textNorm.length > 3)
     };
     page.descriptionNorm = compromise(page.description).normalize(normalizeOptions).out('text');
+
+    page.documents.forEach(doc => {
+        const compromiseInstance = doc.compromiseInstance;
+
+        compromiseInstance.sentences().data().forEach(x => {
+            const sen: DocumentInterface = { source: doc.source, text: x.text, textNorm: x.normal };
+            page.sentences.push(sen);
+        });
+        doc.compromiseInstance = undefined;
+    });
+    page.sentences = page.sentences
+        .filter(x => x.textNorm.length > 3);
+
     return page;
 }
 
@@ -104,6 +123,7 @@ export async function step50() {
         testItems: await Promise.all(
             items
                 .filter(page => !!(page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text))
+                .slice(0, 10)
                 .map(page => processPage(page)))
     };
 

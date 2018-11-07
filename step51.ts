@@ -11,21 +11,33 @@ const TfIdf = natural.TfIdf;
 
 async function processPage(page: PackedPageInterface) {
     const tfidf = new TfIdf();
+    const tfidfSen = new TfIdf();
+
     page.descriptionTokens = (page.descriptionNorm as any).tokenizeAndStem();
     page.documents
         .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
         .map(x => tfidf.addDocument(x.tokens));
+    page.sentences
+        .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
+        .map(x => tfidfSen.addDocument(x.tokens));
 
     // page.tfidf = JSON.stringify(tfidf);
 
     tfidf.tfidfs(page.descriptionTokens, (i, measure) => {
         page.documents[i].measure = measure;
     });
+    tfidfSen.tfidfs(page.descriptionTokens, (i, measure) => {
+        page.sentences[i].measure = measure;
+    });
 
     const avgScore = page.documents.reduce((a, x) => (a + x.measure) / 2, 0);
+    const avgScoreSen = page.sentences.reduce((a, x) => (a + x.measure) / 2, 0);
 
     page.documents
-        .map(x => x.rejected = x.measure < avgScore * 0.8 && 'tfidfs similarity to low')
+        .map(x => x.rejected = x.measure < avgScore * 0.8 && 'tfidfs similarity to low');
+
+    page.sentences
+        .map(x => x.rejected = x.measure < avgScoreSen * 0.8 && 'tfidfs similarity to low');
 }
 
 export async function step51() {
