@@ -88,6 +88,7 @@ async function processPage(page: PackedPageInterface) {
 }
 
 export async function step53() {
+    return;
     const data: DataInterface = await fs.readJson('./data/data.json');
     await processPage(data.items[0]);
     // await Promise.all(data.items.slice(0, 50).map(x => processPage(x)));

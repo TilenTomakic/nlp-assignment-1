@@ -1,21 +1,16 @@
-import * as FastText from 'fasttext.js';
-import {DataInterface, DocumentInterface, normalizeOptions} from "./step50";
-import * as fs from "fs-extra";
-import * as natural from "natural";
+import { DataInterface, normalizeOptions } from "./step50";
+import * as fs                             from "fs-extra";
+import * as natural                        from "natural";
+import * as sw                             from 'stopword';
 
 (natural.PorterStemmer as any).attach();
-// (natural.LancasterStemmer as any).attach();
-
-const tokenizer = new natural.WordTokenizer();
-const wordnet = new natural.WordNet();
-const TfIdf = natural.TfIdf;
 const compromise = require('compromise');
 
+
 function classify(classifier: any, txt: string) {
-    const norm = (compromise(txt).normalize(normalizeOptions).out('text'));
+    const norm = sw.removeStopwords(compromise(txt).normalize(normalizeOptions).out('text').split(' ')).join(' ');
     return classifier.classify(norm.tokenizeAndStem().join(' '));
 }
-
 
 export async function step54() {
     const data: DataInterface = await fs.readJson('./data/data.json');
@@ -28,10 +23,17 @@ export async function step54() {
     });
 
     classifier.train();
-    classifier.save('./data/brain_classifier.json', function () {});
+    await new Promise((resolve, fail) => {
+        classifier.save('./data/classifier_NaiveBayes.json', function (err, classifier) {
+            if (err) {
+                return fail();
+            }
+            resolve();
+        });
+    });
 
-    const xx = classify(classifier, 'did the tests pass?');
-    const xx2 = classify(classifier, 'GraphDB is a RDF graph database or triplestore. It is the only triplestore that can perform semantic inferencing at scale allowing users to create new semantic facts from existing facts. It also has the ability to visualize triples.');
+    const a = classify(classifier, 'did the tests pass?');
+    const b = classify(classifier, 'GraphDB is a RDF graph database or triplestore. It is the only triplestore that can perform semantic inferencing at scale allowing users to create new semantic facts from existing facts. It also has the ability to visualize triples.');
 
-    console.log(12);
+    console.log();
 }

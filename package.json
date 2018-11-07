@@ -3,6 +3,9 @@
   "author": "Tilen Tomakić",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "tsc": "tsc"
+  },
   "dependencies": {
     "@types/cheerio": "^0.22.9",
     "@types/fs-extra": "^5.0.4",
@@ -26,7 +29,9 @@
     "request-promise-native": "^1.0.5",
     "sanitize-filename": "^1.6.1",
     "sanitize-html": "^1.19.1",
+    "stopword": "^0.1.13",
     "striptags": "^3.1.1",
+    "typescript": "^3.1.6",
     "unfluff": "^3.2.0",
     "wikijs": "^4.8.1",
     "wordnet-db": "^3.1.11"

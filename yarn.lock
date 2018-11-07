@@ -1382,6 +1382,11 @@ stem-porter@*:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/stem-porter/-/stem-porter-0.0.1.tgz#591a8b0d696c34252af593535228430a34de7001"
 
+stopword@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/stopword/-/stopword-0.1.13.tgz#92b26491c443b1a8d9709142ad64ae1af10cea55"
+  integrity sha512-WteqDiQpRyn2yBAm1pwbkXn+SMa8L+WDesd33ovgs0JoheFcrrazMSet4P9LoTRteuUoqVxtEIwEKVZ/z/WHKg==
+
 string-width@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-1.0.2.tgz#118bdf5b8cdc51a2a7e70d211e07e2b0b9b107d3"
@@ -1498,6 +1503,11 @@ type-is@^1.6.14:
   dependencies:
     media-typer "0.3.0"
     mime-types "~2.1.18"
+
+typescript@^3.1.6:
+  version "3.1.6"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.6.tgz#b6543a83cfc8c2befb3f4c8fba6896f5b0c9be68"
+  integrity sha512-tDMYfVtvpb96msS1lDX9MEdHrW4yOuZ4Kdc4Him9oU796XldPYF/t2+uKoX0BBa0hXXwDlqYQbXY5Rzjzc5hBA==
 
 underscore@>=1.3.1, underscore@^1.3.1:
   version "1.9.1"

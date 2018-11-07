@@ -1,33 +1,38 @@
 import * as fs                                from 'fs-extra';
 import * as natural                           from 'natural';
 import { DataInterface, PackedPageInterface } from "./step50";
+import * as sw              from 'stopword';
 
-(natural.PorterStemmer as any).attach();
 // (natural.LancasterStemmer as any).attach();
+(natural.PorterStemmer as any).attach(); // <- Porter se izkaže kot boljši
 
 const tokenizer = new natural.WordTokenizer();
 const wordnet = new natural.WordNet();
 const TfIdf = natural.TfIdf;
 
 async function processPage(page: PackedPageInterface) {
-    const tfidf = new TfIdf();
-    const tfidfSen = new TfIdf();
+    page.tfidf = new TfIdf();
+    page.tfidfSen = new TfIdf();
 
     page.descriptionTokens = (page.descriptionNorm as any).tokenizeAndStem();
-    page.documents
-        .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
-        .map(x => tfidf.addDocument(x.tokens));
-    page.sentences
-        .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
-        .map(x => tfidfSen.addDocument(x.tokens));
+    page.descriptionTokens = sw.removeStopwords(page.descriptionTokens);
 
-    // page.tfidf = JSON.stringify(tfidf);
+    page.documents = page.documents
+                         .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
+                         .map(x => ({ ...x, tokens: sw.removeStopwords(x.tokens) }));
 
-    tfidf.tfidfs(page.descriptionTokens, (i, measure) => {
-        page.documents[i].measure = measure;
+    page.sentences = page.sentences
+                         .map(x => ({ ...x, tokens: (x.textNorm as any).tokenizeAndStem() }))
+                         .map(x => ({ ...x, tokens: sw.removeStopwords(x.tokens) }));
+
+    page.documents.map(x => page.tfidf.addDocument(x.tokens));
+    page.sentences.map(x => page.tfidfSen.addDocument(x.tokens));
+
+    page.tfidf.tfidfs(page.descriptionTokens, (i, measure) => {
+        page.documents[ i ].measure = measure;
     });
-    tfidfSen.tfidfs(page.descriptionTokens, (i, measure) => {
-        page.sentences[i].measure = measure;
+    page.tfidfSen.tfidfs(page.descriptionTokens, (i, measure) => {
+        page.sentences[ i ].measure = measure;
     });
 
     const avgScore = page.documents.reduce((a, x) => (a + x.measure) / 2, 0);
@@ -42,20 +47,18 @@ async function processPage(page: PackedPageInterface) {
 
 export async function step51() {
     const data: DataInterface = await fs.readJson('./data/data.json');
-    // await processPage(data.items[0]);
     await Promise.all(data.items.map(x => processPage(x)));
-
 
     const trainTsv = data.items.reduce((a, x) => {
         x.documents
             .filter(d => !d.rejected)
-            .forEach(n => a += `${ x.id }\t${ n.text }\n`);
-        a += `${ x.id }\t${ x.description }\n`;
+            .forEach(n => a += `${ x.id }\t${ n.tokens.join(' ') }\n`);
+        a += `${ x.id }\t${ x.descriptionTokens.join(' ') }\n`;
         return a;
     }, '');
 
     const testTsv = data.items.reduce((a, x) => {
-        a += `${ x.alternatives[0] }\t${ x.description }\n`;
+        a += `${ x.alternatives[ 0 ] }\t${ x.descriptionTokens.join(' ') }\n`;
         return a;
     }, '');
 
