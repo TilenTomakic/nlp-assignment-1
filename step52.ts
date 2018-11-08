@@ -1,4 +1,4 @@
-import * as FastText        from 'fasttext.js';
+/*import * as FastText        from 'fasttext.js';
 import { normalizeOptions } from "./step50";
 import * as natural         from "natural";
 import * as sw              from 'stopword';
@@ -87,3 +87,4 @@ export async function step52() {
     await test();
     await manualTest();
 }
+*/

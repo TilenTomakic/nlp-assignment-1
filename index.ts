@@ -6,7 +6,6 @@ import { step100 } from "./step100";
 import { step50 }  from "./step50";
 import { step51 }  from "./step51";
 import { step101 } from "./step101";
-import { step52 }  from "./step52";
 import { step102 } from "./step102";
 import { step54 }  from "./step54";
 import { step53 }  from "./step53";
@@ -21,7 +20,7 @@ const steps = [
     // PROCESS and TRAIN TEXT
     step50,
     step51,
-    step52,
+    // step52,
     step53,
     step54,
 

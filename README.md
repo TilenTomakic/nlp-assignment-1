@@ -1,7 +1,7 @@
 # FRI ONJ - assignment 1 
 
 ## Installation
-Install NodeJs (v10), Yarn and ~~docker~~. Then run `yarn install && yarn run tsc`.
+Install nodeJs (v10) and yarn. Then run `yarn install && yarn run tsc`.
 
 ## Usage
 In your terminal set env `ENTRY_PAGE` to web page with list of software.

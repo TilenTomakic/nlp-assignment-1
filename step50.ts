@@ -1,4 +1,5 @@
 import * as fs           from 'fs-extra';
+import { uniq }          from 'lodash';
 import { PageInterface } from "./step2";
 
 const compromise = require('compromise');
@@ -26,6 +27,7 @@ export interface DocumentInterface {
     text: string;
     textNorm?: string;
     tokens?: string[];
+    tokensTfidf?: { [ token: string ]: number };
     compromiseInstance?: any;
 }
 
@@ -36,19 +38,19 @@ export interface DataInterface {
 
 export const normalizeOptions = {
     // remove hyphens, newlines, and force one space between words
-    whitespace:   true,
+    whitespace  : true,
     // keep only first-word, and 'entity' titlecasing
-    case:         true,
+    case        : true,
     // turn 'seven' to '7'
-    numbers:      true,
+    numbers     : true,
     // remove commas, semicolons - but keep sentence-ending punctuation
-    punctuation:  true,
+    punctuation : true,
     // visually romanize/anglicize 'Björk' into 'Bjork'.
-    unicode:      true,
+    unicode     : true,
     // turn "isn't" to "is not"
     contractions: true,
     //remove periods from acronyms, like 'F.B.I.'
-    acronyms:     true,
+    acronyms    : true,
 
     // --- A2
 
@@ -57,56 +59,59 @@ export const normalizeOptions = {
     // turn "Google's tax return" to "Google tax return"
     possessives: true,
     // turn "batmobiles" into "batmobile"
-    plurals:     true,
+    plurals    : true,
     // turn all verbs into Infinitive form - "I walked" → "I walk"
-    verbs:       true,
+    verbs      : true,
     //turn 'Vice Admiral John Smith' to 'John Smith'
-    honorifics:  true,
+    honorifics : true,
 };
 
 async function processPage(rawPage: PageInterface) {
     const page: PackedPageInterface = {
-        sentences:    [],
-        id:           rawPage.item.id,
-        url:          rawPage.item.url,
-        title:        rawPage.title,
+        sentences   : [],
+        id          : rawPage.item.id,
+        url         : rawPage.item.url,
+        title       : rawPage.title,
         alternatives: rawPage.alternatives,
-        description:  (rawPage.description || rawPage.item.description || '').split('\n').join(' '),
-        tags:         [
-                          ...rawPage.tags,
-                          ...rawPage.categories.map(x => x.text),
-                          ...rawPage.features.map(x => x.text),
-                      ].map(x => x.toLowerCase()),
-        documents:    [
-                          ...(rawPage.wiki && rawPage.wiki.content || '')
-                              .split(/={2,3} .+ ={2,3}/)
-                              .map(x => x.split('\n').join(' '))
-                              .map(text => ({ source: 'wiki' as 'wiki', text })),
-                          ...(rawPage.reviews || [])
-                              .map(text => ({ source: 'review' as 'review', text })),
-                          ...(rawPage.comments || [])
-                              .map(text => ({ source: 'comment' as 'comment', text })),
-                          ...(rawPage.officalPage && rawPage.officalPage.text || '')
-                              .split('\n')
-                              .map(text => ({ source: 'official' as 'official', text })),
-                      ]
-                          .map(x => ({ ...x, text: (x.text || '').trim() }))
-                          .map(x => {
-                              const compromiseInstance = compromise(x.text).normalize(normalizeOptions);
-                              const textNorm = compromiseInstance.out('text');
-                              return { ...x, compromiseInstance, textNorm };
-                          })
-                          .filter(x => x.textNorm.length > 3)
+        description : (rawPage.description || rawPage.item.description || '').split('\n').join(' '),
+        tags        : uniq([
+                ...rawPage.tags,
+                ...rawPage.categories.map(x => x.text),
+                ...rawPage.features.map(x => x.text),
+            ]
+                .map(x => x.toLowerCase())
+                .map(x => compromise(x).normalize(normalizeOptions).out('text'))
+        ),
+        documents   : [
+            ...(rawPage.wiki && rawPage.wiki.content || '')
+                .split(/={2,3} .+ ={2,3}/)
+                .map(x => x.split('\n').join(' '))
+                .map(text => ({ source: 'wiki' as 'wiki', text })),
+            ...(rawPage.reviews || [])
+                .map(text => ({ source: 'review' as 'review', text })),
+            ...(rawPage.comments || [])
+                .map(text => ({ source: 'comment' as 'comment', text })),
+            ...(rawPage.officalPage && rawPage.officalPage.text || '')
+                .split('\n')
+                .map(text => ({ source: 'official' as 'official', text })),
+        ]
+            .map(x => ({ ...x, text: (x.text || '').trim() }))
+            .map(x => {
+                const compromiseInstance = compromise(x.text).normalize(normalizeOptions);
+                const textNorm           = compromiseInstance.out('text');
+                return { ...x, compromiseInstance, textNorm };
+            })
+            .filter(x => x.textNorm.length > 3)
     };
-    page.descriptionNorm = compromise(page.description).normalize(normalizeOptions).out('text');
+    page.descriptionNorm            = compromise(page.description).normalize(normalizeOptions).out('text');
 
     page.documents.forEach(doc => {
         const compromiseInstance = doc.compromiseInstance;
 
         compromiseInstance.sentences().data().forEach(x => {
             const sen: DocumentInterface = {
-                source:   doc.source,
-                text:     x.text,
+                source  : doc.source,
+                text    : x.text,
                 textNorm: x.normal
             };
             page.sentences.push(sen);
@@ -114,16 +119,16 @@ async function processPage(rawPage: PageInterface) {
         doc.compromiseInstance = undefined;
     });
     page.sentences = page.sentences
-                         .filter(x => x.textNorm.length > 3);
+        .filter(x => x.textNorm.length > 3);
 
     return page;
 }
 
 export async function step50() {
-    const pages = fs.readdirSync('./data/pages');
-    const items = await Promise.all(pages.map(pageName => fs.readJson(`./data/pages/${ pageName }`)));
+    const pages               = fs.readdirSync('./data/pages');
+    const items               = await Promise.all(pages.map(pageName => fs.readJson(`./data/pages/${ pageName }`)));
     const data: DataInterface = {
-        items:     await Promise.all(
+        items    : await Promise.all(
             items
                 .filter(page => !(page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text))
                 .map(page => processPage(page))),
