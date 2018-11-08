@@ -61,6 +61,14 @@ async function processPage(page: PackedPageInterface) {
 
     page.sentences
         .map(x => x.rejected = x.measure < avgScoreSen * 0.8 && 'tfidfs similarity to low');
+
+    page.allTokens = [
+        ...page.descriptionTokens,
+        ...page.documents
+            .filter(doc => !doc.rejected)
+            .map(doc => doc.tokens)
+            .reduce((a,c) => [...a, ...c],[])
+    ];
 }
 
 export async function step51() {

@@ -5,7 +5,11 @@ Install nodeJs (v10) and yarn. Then run `yarn install && yarn run tsc`.
 
 ## Usage
 In your terminal set env `ENTRY_PAGE` to web page with list of software.
-Run `node index.js`. Results and reports will be saved into `./data` folder.
+
+Run `node --max-old-space-size=8192 index.js`. 
+
+## Output
+Results and reports will be saved into `./data` folder.
 
 ## What data is scraped?
 Software or service:

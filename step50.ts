@@ -16,6 +16,7 @@ export interface PackedPageInterface {
     documents: DocumentInterface[];
     sentences: DocumentInterface[];
 
+    allTokens?: string[];
     tfidf?: any;
     tfidfSen?: any;
 }
@@ -101,7 +102,7 @@ async function processPage(rawPage: PageInterface) {
                 const textNorm           = compromiseInstance.out('text');
                 return { ...x, compromiseInstance, textNorm };
             })
-            .filter(x => x.textNorm.length > 3)
+            .map(x => ({ ...x, rejected:  x.textNorm.length < 3 ? 'to small' : undefined }))
     };
     page.descriptionNorm            = compromise(page.description).normalize(normalizeOptions).out('text');
 
@@ -135,7 +136,6 @@ export async function step50() {
         testItems: await Promise.all(
             items
                 .filter(page => !!(page.skip || !page.officalHtml || !page.item.description || !page.wiki || !page.wiki.content || !page.officalPage.text))
-                .slice(0, 10)
                 .map(page => processPage(page)))
     };
 

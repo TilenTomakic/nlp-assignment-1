@@ -29,9 +29,7 @@ const compromise = require('compromise');
 
 function tokensToInput(tokens: string[]) {
     return tokens.reduce((a, token) => {
-        if (token) {
-            a[ token ] = 1;
-        }
+        if (token) {  a[ token ] = 1;  }
         return a;
     }, {})
 }
@@ -57,30 +55,18 @@ export async function step54() {
         intentClassifier = newClassifierFunction();
         const inputs = [];
         data.items
-            //.slice(0, 100)
             .forEach(page => {
                 let output = page.tags;
-                output.push(page.id);
-                //const allDocTokens = page.documents
-                //    .filter(doc => !doc.rejected)
-                //    .filter(doc => doc.tokens.length > 3)
-                //    .sort((a, b) => b.measure - a.measure)
-                //    .slice(0, 1)
-                //    .map(doc => doc.tokens)
-                //    .reduce((a, c) => [...a, ...c], []);
-                // inputs.push({ input: tokensToInput(uniq([...page.descriptionTokens, ...allDocTokens])), output });
-
+                output.push(`PRODUCT:${page.id}`);
                 inputs.push({ input: tokensToInput(page.descriptionTokens), output });
                 page.documents
                     .filter(doc => !doc.rejected)
-                    .filter(doc => doc.tokens.length > 3)
                     .sort((a, b) => b.measure - a.measure)
-                    .slice(0, 10)
                     .forEach(doc => {
                         inputs.push({
                             input: tokensToInput(
                                 doc.tokens
-                                    .splice(0, 10)
+                                    // .splice(0, 10)
                             ), output
                         });
                     })
@@ -121,4 +107,6 @@ export async function step54() {
         missed,
         wrong
     });
+
+    process.exit(0);
 }
