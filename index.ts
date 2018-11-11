@@ -46,7 +46,7 @@ async function run(skipTo: any) {
 }
 
 // You can skip steps here:
-run(step70).then(() => {
+run(step1).then(() => {
     console.log('Finished');
     process.exit(0);
 }).catch(e => {

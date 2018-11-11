@@ -21,13 +21,13 @@ Software or service:
 
 ## Goal
 -[x] Detect wrong scraps (documents) from wiki and official pages. 
--[ ] Detect alternative product documents and compare results with alternatives database
--[ ] Visualize cluster and comment on findings
+-[x] Detect alternative product documents and compare results with alternatives database
+-[x] Visualize cluster and comment on findings
 
 ## Steps
 - Steps 1-49 are for scraping data from web.
 - Steps 50-99 are for text processing.
-- Steps 100-199 are for creating results report.
+- Steps 70-199 are for creating results report.
 
 ### Step 50
 - split into sections and sentences
@@ -38,3 +38,14 @@ Software or service:
 - use porter stemmer
 - tokenize
 - remove stopwords
+
+### Step 60
+-	clustering: K-MEANS, 
+-	density clustering: DBSCAN, OPTICS
+
+
+### Step 61
+-	classifier: NaiveBayes 
+
+### Step 62
+-	multilabel classification: winnow classifier

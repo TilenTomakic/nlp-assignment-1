@@ -30,7 +30,7 @@ export async function step60() {
     await testData.initTest();
 
     const kmeans         = new clustering.KMEANS();
-    const kmeansClusters = kmeans.run(allVectors, 2);
+    const kmeansClusters = kmeans.run(allVectors, 3);
     await fs.writeJson('./data/cluster_kmean2.json', { kmeansClusters });
     const kmeans_res = kmeansClusters.map(x => x.map(i => i < data.items.length ? data.items[ i ].id : data.testItems[ i - data.items.length ].id));
     console.log('KMEANS done');
@@ -40,7 +40,7 @@ export async function step60() {
     });
 
     const neighborhoodRadius   = 100;
-    const pointsInNeighborhood = 3;
+    const pointsInNeighborhood = 2;
 
     const dbscan         = new clustering.DBSCAN();
     // parameters: 5 - neighborhood radius, 2 - number of points in neighborhood to form a cluster
