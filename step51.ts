@@ -4,6 +4,8 @@ import { uniq }                               from 'lodash';
 import { DataInterface, PackedPageInterface } from "./step50";
 import * as sw                                from 'stopword';
 
+export const docsNum = 0;
+
 // (natural.LancasterStemmer as any).attach();
 (natural.PorterStemmer as any).attach(); // <- Porter se izkaže kot boljši
 
@@ -45,7 +47,7 @@ async function processPage(page: PackedPageInterface) {
         ...page.documents
             .filter(doc => !doc.rejected)
             .sort((a, b) => b.measure - a.measure)
-            .slice(0, 10) // performance reasons
+            .slice(0, docsNum) // performance reasons
             .map(doc => doc.tokens)
             .reduce((a, c) => [ ...a, ...c ], [])
     ];
@@ -53,10 +55,16 @@ async function processPage(page: PackedPageInterface) {
 
 export async function step51() {
     const data: DataInterface = await fs.readJson('./data/data.json');
-    data.items = data.items.filter(x =>
-        x.tags.indexOf('developer tool') !== -1 ||
-        x.tags.indexOf('ide') !== -1
-    );
+    // data.items = data.items.filter(x =>
+    //     x.tags.indexOf('developer tool') !== -1 ||
+    //     x.tags.indexOf('version-control-system') !== -1 ||
+    //     x.tags.indexOf('ide') !== -1
+    // );
+    // data.testItems = data.testItems.filter(x =>
+    //     x.tags.indexOf('developer tool') !== -1 ||
+    //     x.tags.indexOf('version-control-system') !== -1 ||
+    //     x.tags.indexOf('ide') !== -1
+    // );
     await Promise.all(data.items.map(x => processPage(x)));
     await Promise.all(data.testItems.map(x => processPage(x)));
 

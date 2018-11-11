@@ -4,6 +4,7 @@ import * as natural                                       from "natural";
 import * as sw                                            from 'stopword';
 import * as serialize                                     from 'serialization';
 import { intersection, uniq, union, without, difference } from 'lodash';
+import { TestData }                                       from "./test";
 
 interface CResult {
     classes: string[];
@@ -85,6 +86,9 @@ export async function step62() {
     const useSavedClassifierSaved = !true;
     const classifierFun           = classifierWinnow;
 
+    const testData = new TestData();
+    await testData.initTest();
+
     let intentClassifier;
     if (useSavedClassifierSaved) {
         console.log('Training pre-loaded.');
@@ -115,41 +119,14 @@ export async function step62() {
         console.log('Training done.');
     }
 
-    const knownAltenatives = data.items.map(page => page.id);
-
+    // mini manual test
     const a = classify(intentClassifier, 'did the tests pass?', 4);
     const b = classify(intentClassifier, 'GraphDB is a RDF graph database or triplestore. It is the only triplestore that can perform semantic inferencing at scale allowing users to create new semantic facts from existing facts. It also has the ability to visualize triples.', 4);
     const c = classify(intentClassifier, 'create a website', 4);
     const d = classify(intentClassifier, 'VirMach specializes in providing extremely affordable VPS services for many applications and with various different specifications, located in multiple reliable datacenters. We offer cheap Windows VPS plans as well as some of the cheapest Linux plans and dedicated servers, without sacrificing great support and uptime. Get started by comparing services, testing our network, or contact us.');
 
-    const results = data.testItems.map(p => {
-        //const expectedTags = [...p.tags, ...p.alternatives.map(x => `PRODUCT:${ x }`)];
-        const expectedTags    = [ ...p.alternatives.filter(x => knownAltenatives.indexOf(x) !== -1) ];
-        const result: CResult = intentClassifier.classify(tokensToInput(p.descriptionTokens), 4);
-
-        const found  = intersection(result.classes, expectedTags);
-        const diff   = difference(result.classes, expectedTags);
-        const missed = without(expectedTags, ...found);
-        const wrong  = without(result.classes, ...expectedTags);
-
-        return { testId: p.id, expectedTags, result, found, diff, missed, wrong }
+    await testData.test(classifierFun.name, (pageId: string, tokens: string[], vectors: number[], terms: { [ token: string ]: number }) => {
+        const result: CResult = intentClassifier.classify(terms, 4);
+        return result.classes;
     });
-
-    let found  = 0;
-    let missed = 0;
-    let wrong  = 0;
-    results.forEach(x => {
-        found += x.found.length;
-        missed += x.missed.length;
-        wrong += x.wrong.length;
-    });
-
-    console.log({
-        found,
-        missed,
-        wrong
-    });
-
-
-    process.exit(0);
 }

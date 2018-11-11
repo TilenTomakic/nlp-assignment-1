@@ -9,7 +9,8 @@ import { step101 } from "./step101";
 import { step102 } from "./step102";
 import { step60 }  from "./step60";
 import { step61 }  from "./step61";
-import { step62 } from "./step62";
+import { step62 }  from "./step62";
+import { step70 }  from "./step70";
 
 const steps = [
     // GET TEXT FROM WWW
@@ -22,15 +23,17 @@ const steps = [
     step50,
     step51,
 
+    step100,
+    step101,
+    step102,
+
     // CLASSIFY, CLUSTER
     step60,
     step61,
     step62,
 
     // SHOW RESULTS
-    step100,
-    step101,
-    step102
+    step70,
 ];
 
 async function run(skipTo: any) {
@@ -43,7 +46,7 @@ async function run(skipTo: any) {
 }
 
 // You can skip steps here:
-run(step62).then(() => {
+run(step70).then(() => {
     console.log('Finished');
     process.exit(0);
 }).catch(e => {

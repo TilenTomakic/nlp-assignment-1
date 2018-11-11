@@ -4,6 +4,7 @@ import * as natural                        from "natural";
 import * as sw                             from 'stopword';
 import * as clustering                     from 'density-clustering';
 import { VecDocumnets }                    from "./step51";
+import { TestData }                        from "./test";
 
 
 (natural.PorterStemmer as any).attach();
@@ -16,35 +17,53 @@ function classify(classifier: any, txt: string) {
 }
 
 export async function step60() {
-    const data: DataInterface = await fs.readJson('./data/data.json');
+    const data: DataInterface        = await fs.readJson('./data/data.json');
     const vectorDocs: VecDocumnets[] = await fs.readJson('./data/vectors.json');
-    const vectors: number[][] = vectorDocs.map(x => x.vectors);
-    const tagVectors: number[][] = data.items.map(x => x.tagsVectors);
+    const vectors: number[][]        = vectorDocs.map(x => x.vectors);
+    const tagVectors: number[][]     = data.items.map(x => x.tagsVectors);
 
     const testVectorDocs: VecDocumnets[] = await fs.readJson('./data/testVectors.json');
-    const testVectors: number[][] = vectorDocs.map(x => x.vectors);
-    const allVectors = [...vectors, /*testVectors*/]; //.slice(0, 20);
+    const testVectors: number[][]        = vectorDocs.map(x => x.vectors);
+    const allVectors                     = [ ...vectors, ...testVectors ];
 
-    const kmeans = new clustering.KMEANS();
+    const testData = new TestData();
+    await testData.initTest();
+
+    const kmeans         = new clustering.KMEANS();
     const kmeansClusters = kmeans.run(allVectors, 2);
     await fs.writeJson('./data/cluster_kmean2.json', { kmeansClusters });
-    const res = kmeansClusters.map(x => x.map(i =>  data.items[i].id));
+    const kmeans_res = kmeansClusters.map(x => x.map(i => i < data.items.length ? data.items[ i ].id : data.testItems[ i - data.items.length ].id));
     console.log('KMEANS done');
 
-    const neighborhoodRadius = 100;
+    await testData.test('KMEANS', (pageId: string, tokens: string[], vectors: number[]) => {
+        return kmeans_res.find(x => x.find(p => p === pageId));
+    });
+
+    const neighborhoodRadius   = 100;
     const pointsInNeighborhood = 3;
 
-    const dbscan = new clustering.DBSCAN();
+    const dbscan         = new clustering.DBSCAN();
     // parameters: 5 - neighborhood radius, 2 - number of points in neighborhood to form a cluster
     const dbscanClusters = dbscan.run(allVectors, neighborhoodRadius, pointsInNeighborhood);
-    const dbscanNoise = dbscan.noise;
+    const dbscanNoise    = dbscan.noise;
     await fs.writeJson('./data/cluster_dbscan2.json', { dbscanClusters, dbscanNoise });
+    const dbscan_res = dbscanClusters.map(x => x.map(i => i < data.items.length ? data.items[ i ].id : data.testItems[ i - data.items.length ].id));
     console.log('DBSCAN done');
+    await testData.test('DBSCAN', (pageId: string, tokens: string[], vectors: number[]) => {
+        return dbscan_res.find(x => x.find(p => p === pageId));
+    });
 
-    const optics = new clustering.OPTICS();
+    const optics         = new clustering.OPTICS();
     // parameters: 2 - neighborhood radius, 2 - number of points in neighborhood to form a cluster
     const opticsClusters = optics.run(allVectors, neighborhoodRadius, pointsInNeighborhood);
-    const opticsPlot = optics.getReachabilityPlot();
+    const opticsPlot     = optics.getReachabilityPlot();
     await fs.writeJson('./data/cluster_optics2.json', { opticsClusters, opticsPlot });
+    const optics_res = opticsClusters.map(x => x.map(i => i < data.items.length ? data.items[ i ].id : data.testItems[ i - data.items.length ].id));
     console.log('OPTICS done');
+
+    await testData.test('OPTICS', (pageId: string, tokens: string[], vectors: number[]) => {
+        return optics_res.find(x => x.find(p => p === pageId));
+    });
+
+    console.log();
 }

@@ -2,6 +2,7 @@ import { DataInterface, normalizeOptions } from "./step50";
 import * as fs                             from "fs-extra";
 import * as natural                        from "natural";
 import * as sw                             from 'stopword';
+import { TestData }                        from "./test";
 
 (natural.PorterStemmer as any).attach();
 const compromise = require('compromise');
@@ -48,9 +49,16 @@ export async function step61() {
         });
     });
 
+    console.log('61 classifier NaiveBayes done');
+
+    // mini manual test
     const a = classify(classifier, 'did the tests pass?');
     const b = classify(classifier, 'GraphDB is a RDF graph database or triplestore. It is the only triplestore that can perform semantic inferencing at scale allowing users to create new semantic facts from existing facts. It also has the ability to visualize triples.');
     const c = classify(classifier, 'VirMach specializes in providing extremely affordable VPS services for many applications and with various different specifications, located in multiple reliable datacenters. We offer cheap Windows VPS plans as well as some of the cheapest Linux plans and dedicated servers, without sacrificing great support and uptime. Get started by comparing services, testing our network, or contact us.');
 
-    console.log(a, b, '61 DONE');
+    const testData = new TestData();
+    await testData.initTest();
+    await testData.test('NaiveBayes', (pageId: string, tokens: string[], vectors: number[]) => {
+        return [ classifier.classify(tokens.join(' ')) ]
+    });
 }
