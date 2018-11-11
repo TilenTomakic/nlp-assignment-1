@@ -14,11 +14,12 @@ export interface PackedPageInterface {
     tags: string[];
     alternatives: string[];
     documents: DocumentInterface[];
-    sentences: DocumentInterface[];
+    documentsAvgTfidf?: number;
 
-    allTokens?: string[];
-    tfidf?: any;
-    tfidfSen?: any;
+    tagsVectors?: number[];
+    tokens?: string[];
+    // vectors?: number[];
+    terms?: { [ token: string ]: number };
 }
 
 export interface DocumentInterface {
@@ -28,8 +29,6 @@ export interface DocumentInterface {
     text: string;
     textNorm?: string;
     tokens?: string[];
-    tokensTfidf?: { [ token: string ]: number };
-    compromiseInstance?: any;
 }
 
 export interface DataInterface {
@@ -69,7 +68,6 @@ export const normalizeOptions = {
 
 async function processPage(rawPage: PageInterface) {
     const page: PackedPageInterface = {
-        sentences   : [],
         id          : rawPage.item.id,
         url         : rawPage.item.url,
         title       : rawPage.title,
@@ -100,27 +98,11 @@ async function processPage(rawPage: PageInterface) {
             .map(x => {
                 const compromiseInstance = compromise(x.text).normalize(normalizeOptions);
                 const textNorm           = compromiseInstance.out('text');
-                return { ...x, compromiseInstance, textNorm };
+                return { ...x, textNorm };
             })
-            .map(x => ({ ...x, rejected:  x.textNorm.length < 3 ? 'to small' : undefined }))
+            .map(x => ({ ...x, rejected: x.textNorm.length < 3 ? 'to small' : undefined }))
     };
     page.descriptionNorm            = compromise(page.description).normalize(normalizeOptions).out('text');
-
-    page.documents.forEach(doc => {
-        const compromiseInstance = doc.compromiseInstance;
-
-        compromiseInstance.sentences().data().forEach(x => {
-            const sen: DocumentInterface = {
-                source  : doc.source,
-                text    : x.text,
-                textNorm: x.normal
-            };
-            page.sentences.push(sen);
-        });
-        doc.compromiseInstance = undefined;
-    });
-    page.sentences = page.sentences
-        .filter(x => x.textNorm.length > 3);
 
     return page;
 }
